@@ -6,3 +6,5 @@ Initial testing began on trinket.io. See "Trinket Alpha" document for more. Post
 Trinket Alpha - v0.1-0.8
 
 GUI Overhaul - v0.9
+
+Bug fixes, story additions, random word option - v0.10
