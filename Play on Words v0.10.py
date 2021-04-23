@@ -1,24 +1,38 @@
 """
-Adlib story generator
+Main file - Play on Words
 
 Licensed under MIT license
 (c) Nathan Paul Peterson 2021
+
+Adjective list created by hugsy
+    https://gist.github.com/hugsy/8910dc78d208e40de42deb29e62df913
+
+Verbs list created by aaronbassett
+    https://github.com/aaronbassett/Pass-phrase/blob/master/verbs.txt
+
+Adverbs list created by janester
+    https://github.com/janester/mad_libs/blob/master/List%20of%20Adverbs.txt
+
+Nouns list from desiquintans.com
+    http://www.desiquintans.com/downloads/nounlist/nounlist.txt
 """
 
 import PySimpleGUI as sg
 import random
-import os
 import time
 import sys
+from PyDictionary import PyDictionary
+import linecache
+
 
 verbBank = ['Run','Walk','Swim','Write','Climb']
-usedVerbs = ['']
+usedVerbs = ['Speak']
 nounBank = ['Cat','Sock','Ship','Monkey','Cabbage']
-usedNouns = ['']
+usedNouns = ['Midnight']
 adjBank = ['Bashful','Beautiful','Meaningless','Hungry','Pretty']
-usedAdjs = ['']
+usedAdjs = ['Unhappy']
 advBank = ['Securely','Sadly','Clumsily','Badly','Diligently']
-usedAdvs = ['']
+usedAdvs = ['Angrily']
 
 textSpeed = 0.03
 coloredText = True
@@ -84,26 +98,19 @@ def bankReset():
   
   if not nounBank:
     nounBank = ['Cat','Sock','Ship','Monkey','Cabbage']
-    usedNouns = []
+    usedNouns = ['Midnight']
   
   if not verbBank:
     verbBank = ['Run','Walk','Swim','Write','Climb']
-    usedVerbs = []
+    usedVerbs = ['Speak']
   
   if not adjBank:
     adjBank = ['Bashful','Beautiful','Meaningless','Hungry','Pretty']
-    usedAdjs = []
+    usedAdjs = ['Unhappy']
   
   if not advBank:
     advBank = ['Fastly','Sadly','Clumsily','Badly','Diligently']
-    usedAdvs = []
-
-#class for colored text
-class bcolors:
-    RED = '\x1b[0;0;31m'
-    BLUE = '\x1b[0;0;34m'
-    GREEN = '\x1b[0;0;32m'
-    END = '\x1b[0m'
+    usedAdvs = ['Angrily']
 
 def print_slowly(text):
   global textSpeed
@@ -121,11 +128,6 @@ def print_slowly(text):
     
     elif c == '[':
         time.sleep(0.2)
-    elif c == '/':
-
-    elif c == '{':
-
-    elif c == ']':
     
     else: #all other characters
       sys.stdout.write(c)
@@ -139,7 +141,7 @@ def bankEdit():
   global advBank
   
   window = sg.Window("Edit banks",[[sg.Text('Select a word bank to edit')],[sg.Button('Adjective Bank')],[sg.Button('Verb Bank')],[sg.Button('Noun Bank')],[sg.Button('Adverb Bank')],[sg.Button('Main Menu')]]).Finalize()
-  window.Maximize()
+  
   
   while True:
       event, values = window.read()
@@ -152,10 +154,11 @@ def bankEdit():
           window = sg.Window("Edit adjective bank",
                              [[sg.Text("How would you like to edit the adjective bank?")],
                               [sg.Button("Add words")],
+                              [sg.Button("Add random word")],
                               [sg.Button("Remove words")],
                               [sg.Button("View words")],
                               [sg.Button("Return to bank edit")]]).Finalize()
-          window.Maximize()
+          
           while True:
                 event, values = window.read()
                 if event == "Return to bank edit":
@@ -172,7 +175,7 @@ def bankEdit():
                                         [sg.InputText()],
                                         [sg.Button("Submit")],
                                         [sg.Button("Return to bank edit")]]).Finalize()
-                    window.Maximize()
+                    
                     while True:
                         event, values = window.read()
                         if event == sg.WIN_CLOSED:
@@ -187,6 +190,45 @@ def bankEdit():
                             window.close()
                             bankEdit()
                             
+                elif event == "Add random word":
+                    window.close()
+                    
+                    dictionary = PyDictionary()
+
+                    adjfile = open("adjectives.txt","r")
+
+                    #finds the number of lines in the file
+                    adjcount = 0
+                    for x in adjfile:
+                        adjcount += 1
+
+                    #finds a random number between 1 and the number of lines
+                    randlinenum = random.randint(1,adjcount)
+
+                    #finds the random line generated
+                    randline = linecache.getline('adjectives.txt',randlinenum)
+
+                    #finds the definition for the random word
+                    randdef = str(dictionary.meaning(randline))
+
+                    #finds the points to cut in the definition
+                    cutpoint1 = randdef.find('[')+1
+                    cutpoint2 = randdef.find(']')
+
+                    #assembles definition without extra characters
+                    randdef = randdef[cutpoint1:cutpoint2]
+                    
+                    popup = sg.popup_yes_no(randline + randdef, title = "Random adjective")
+                    
+                    if popup == "Yes":
+                        randline = randline.capitalize()
+                        adjBank.append(randline)
+                        window.close()
+                        bankEdit()
+                    elif popup == "No":
+                        window.close()
+                        bankEdit()
+                    
                 elif event == "Remove words":
                     window.close()
                     listAdj = '\n'
@@ -199,7 +241,7 @@ def bankEdit():
                                         [sg.Input(key = 'intLock', enable_events = True)],
                                         [sg.Button("Remove")],
                                         [sg.Button("Return to bank edit")]]).Finalize()
-                    window.Maximize()
+                    
                     while True:
                         event, values = window.read()
                         if event == sg.WIN_CLOSED:
@@ -227,7 +269,7 @@ def bankEdit():
                      window = sg.Window("Adjective List: View",
                                         [[sg.Text("Adjective Bank:\n" + listAdj)],
                                          [sg.Button("Return to bank edit")]]).Finalize()
-                     window.Maximize()
+                     
                      while True:
                          event, values = window.read()
                          if event == "Return to bank edit":
@@ -242,10 +284,11 @@ def bankEdit():
           window = sg.Window("Edit verb bank",
                              [[sg.Text("How would you like to edit the verb bank?")],
                               [sg.Button("Add words")],
+                              [sg.Button("Add random word")],
                               [sg.Button("Remove words")],
                               [sg.Button("View words")],
                               [sg.Button("Return to bank edit")]]).Finalize()
-          window.Maximize()
+          
           while True:
                 event, values = window.read()
                 if event == "Return to bank edit":
@@ -262,7 +305,7 @@ def bankEdit():
                                         [sg.InputText()],
                                         [sg.Button("Submit")],
                                         [sg.Button("Return to bank edit")]]).Finalize()
-                    window.Maximize()
+                    
                     while True:
                         event, values = window.read()
                         if event == sg.WIN_CLOSED:
@@ -276,7 +319,46 @@ def bankEdit():
                         elif event == "Return to bank edit":
                             window.close()
                             bankEdit()
-                            
+                
+                elif event == "Add random word":
+                    window.close()
+                    
+                    dictionary = PyDictionary()
+
+                    verbfile = open("verbs.txt","r")
+
+                    #finds the number of lines in the file
+                    verbcount = 0
+                    for x in verbfile:
+                        verbcount += 1
+
+                    #finds a random number between 1 and the number of lines
+                    randlinenum = random.randint(1,verbcount)
+
+                    #finds the random line generated
+                    randline = linecache.getline('verbs.txt',randlinenum)
+
+                    #finds the definition for the random word
+                    randdef = str(dictionary.meaning(randline))
+
+                    #finds the points to cut in the definition
+                    cutpoint1 = randdef.find('[')+1
+                    cutpoint2 = randdef.find(']')
+
+                    #assembles definition without extra characters
+                    randdef = randdef[cutpoint1:cutpoint2]
+                    
+                    popup = sg.popup_yes_no(randline + randdef, title = "Random verb")
+                    
+                    if popup == "Yes":
+                        randline = randline.capitalize()
+                        verbBank.append(randline)
+                        window.close()
+                        bankEdit()
+                    elif popup == "No":
+                        window.close()
+                        bankEdit()
+                
                 elif event == "Remove words":
                     window.close()
                     listVerb = '\n'
@@ -289,7 +371,7 @@ def bankEdit():
                                         [sg.Input(key = 'intLock', enable_events = True)],
                                         [sg.Button("Remove")],
                                         [sg.Button("Return to bank edit")]]).Finalize()
-                    window.Maximize()
+                    
                     while True:
                         event, values = window.read()
                         if event == sg.WIN_CLOSED:
@@ -317,7 +399,7 @@ def bankEdit():
                      window = sg.Window("Verb List: View",
                                         [[sg.Text("Verb Bank:\n" + listVerb)],
                                          [sg.Button("Return to bank edit")]]).Finalize()
-                     window.Maximize()
+                     
                      while True:
                          event, values = window.read()
                          if event == "Return to bank edit":
@@ -333,10 +415,11 @@ def bankEdit():
           window = sg.Window("Edit adverb bank",
                              [[sg.Text("How would you like to edit the adverb bank?")],
                               [sg.Button("Add words")],
+                              [sg.Button("Add random word")],
                               [sg.Button("Remove words")],
                               [sg.Button("View words")],
                               [sg.Button("Return to bank edit")]]).Finalize()
-          window.Maximize()
+          
           while True:
                 event, values = window.read()
                 if event == "Return to bank edit":
@@ -353,7 +436,7 @@ def bankEdit():
                                         [sg.InputText()],
                                         [sg.Button("Submit")],
                                         [sg.Button("Return to bank edit")]]).Finalize()
-                    window.Maximize()
+                    
                     while True:
                         event, values = window.read()
                         if event == sg.WIN_CLOSED:
@@ -380,7 +463,7 @@ def bankEdit():
                                         [sg.Input(key = 'intLock', enable_events = True)],
                                         [sg.Button("Remove")],
                                         [sg.Button("Return to bank edit")]]).Finalize()
-                    window.Maximize()
+                    
                     while True:
                         event, values = window.read()
                         if event == sg.WIN_CLOSED:
@@ -398,6 +481,45 @@ def bankEdit():
                             window.close()
                             bankEdit()
                             
+                elif event == "Add random word":
+                    window.close()
+                    
+                    dictionary = PyDictionary()
+
+                    advfile = open("adverbs.txt","r")
+
+                    #finds the number of lines in the file
+                    advcount = 0
+                    for x in advfile:
+                        advcount += 1
+
+                    #finds a random number between 1 and the number of lines
+                    randlinenum = random.randint(1,advcount)
+
+                    #finds the random line generated
+                    randline = linecache.getline('adverbs.txt',randlinenum)
+
+                    #finds the definition for the random word
+                    randdef = str(dictionary.meaning(randline))
+
+                    #finds the points to cut in the definition
+                    cutpoint1 = randdef.find('[')+1
+                    cutpoint2 = randdef.find(']')
+
+                    #assembles definition without extra characters
+                    randdef = randdef[cutpoint1:cutpoint2]
+                    
+                    popup = sg.popup_yes_no(randline + randdef, title = "Random adverb")
+                    
+                    if popup == "Yes":
+                        randline = randline.capitalize()
+                        advBank.append(randline)
+                        window.close()
+                        bankEdit()
+                    elif popup == "No":
+                        window.close()
+                        bankEdit()
+                
                 elif event == "View words":
                      window.close()
                      listAdv = '\n'
@@ -408,7 +530,7 @@ def bankEdit():
                      window = sg.Window("Adverb List: View",
                                         [[sg.Text("Adverb Bank:\n" + listAdv)],
                                          [sg.Button("Return to bank edit")]]).Finalize()
-                     window.Maximize()
+                     
                      while True:
                          event, values = window.read()
                          if event == "Return to bank edit":
@@ -423,10 +545,11 @@ def bankEdit():
           window = sg.Window("Edit noun bank",
                              [[sg.Text("How would you like to edit the noun bank?")],
                               [sg.Button("Add words")],
+                              [sg.Button("Add random word")],
                               [sg.Button("Remove words")],
                               [sg.Button("View words")],
                               [sg.Button("Return to bank edit")]]).Finalize()
-          window.Maximize()
+          
           while True:
                 event, values = window.read()
                 if event == "Return to bank edit":
@@ -443,7 +566,7 @@ def bankEdit():
                                         [sg.InputText()],
                                         [sg.Button("Submit")],
                                         [sg.Button("Return to bank edit")]]).Finalize()
-                    window.Maximize()
+                    
                     while True:
                         event, values = window.read()
                         if event == sg.WIN_CLOSED:
@@ -457,7 +580,46 @@ def bankEdit():
                         elif event == "Return to bank edit":
                             window.close()
                             bankEdit()
-                            
+                
+                elif event == "Add random word":
+                    window.close()
+                    
+                    dictionary = PyDictionary()
+
+                    nounfile = open("nouns.txt","r")
+
+                    #finds the number of lines in the file
+                    nouncount = 0
+                    for x in nounfile:
+                        nouncount += 1
+
+                    #finds a random number between 1 and the number of lines
+                    randlinenum = random.randint(1,nouncount)
+
+                    #finds the random line generated
+                    randline = linecache.getline('nouns.txt',randlinenum)
+
+                    #finds the definition for the random word
+                    randdef = str(dictionary.meaning(randline))
+
+                    #finds the points to cut in the definition
+                    cutpoint1 = randdef.find('[')+1
+                    cutpoint2 = randdef.find(']')
+
+                    #assembles definition without extra characters
+                    randdef = randdef[cutpoint1:cutpoint2]
+                    
+                    popup = sg.popup_yes_no(randline + randdef, title = "Random noun")
+                    
+                    if popup == "Yes":
+                        randline = randline.capitalize()
+                        nounBank.append(randline)
+                        window.close()
+                        bankEdit()
+                    elif popup == "No":
+                        window.close()
+                        bankEdit()
+                
                 elif event == "Remove words":
                     window.close()
                     listNoun = '\n'
@@ -470,7 +632,7 @@ def bankEdit():
                                         [sg.Input(key = 'intLock', enable_events = True)],
                                         [sg.Button("Remove")],
                                         [sg.Button("Return to bank edit")]]).Finalize()
-                    window.Maximize()
+                    
                     while True:
                         event, values = window.read()
                         if event == sg.WIN_CLOSED:
@@ -498,7 +660,7 @@ def bankEdit():
                      window = sg.Window("Noun List: View",
                                         [[sg.Text("Noun Bank:\n" + listNoun)],
                                          [sg.Button("Return to bank edit")]]).Finalize()
-                     window.Maximize()
+                     
                      while True:
                          event, values = window.read()
                          if event == "Return to bank edit":
@@ -514,16 +676,7 @@ def bankEdit():
 
 #program to end the story and return to main menu
 def storyEnd(title,char,ending):
-  print_slowly("Story: " + title)
-  time.sleep(0.5)
-  print_slowly("Character: " + char)
-  time.sleep(0.5)
-  print_slowly("Ending: " + "'" + ending + "'")
-  time.sleep(3)
-  print("")
-  print("")
-  print_slowly("Press enter to return to the main menu.")
-  input()
+  end = sg.popup("Story: " + title,"Character: " + char,"Ending: " + "'" + ending + "'")
   mainMenu()
 
 #program to select gender
@@ -543,13 +696,13 @@ def genGender():
     gender = 'male'
   
   if gender == 'male':
-    pronounHe = '{he]'
-    pronounHis = '{his]'
-    pronounHim = '{him]'
+    pronounHe = 'he'
+    pronounHis = 'his'
+    pronounHim = 'him'
   else:
-    pronounHe = '{she]'
-    pronounHis = '{her]'
-    pronounHim = '{her]'
+    pronounHe = 'she'
+    pronounHis = 'her'
+    pronounHim = 'her'
 
 #generate unique words
 def genWords():
@@ -632,7 +785,7 @@ def genWords():
     charType = random.choice(nounBank)
     nounBank.remove(charType)
     usedNouns.append(charType)
-  elif not nounBank:
+  else:
     charType = random.choice(usedNouns)
   
   #nouns
@@ -640,70 +793,70 @@ def genWords():
     noun1 = random.choice(nounBank)
     nounBank.remove(noun1)
     usedNouns.append(noun1)
-  elif not nounBank:
+  else:
     noun1 = random.choice(usedNouns)
   
   if nounBank:
     noun2 = random.choice(nounBank)
     nounBank.remove(noun2)
     usedNouns.append(noun2)
-  elif not nounBank:
+  else:
     noun2 = random.choice(usedNouns)
     
   if nounBank:
     noun3 = random.choice(nounBank)
     nounBank.remove(noun3)
     usedNouns.append(noun3)
-  elif not nounBank:
+  else:
     noun3 = random.choice(usedNouns)
   
   if nounBank:
     noun4 = random.choice(nounBank)
     nounBank.remove(noun4)
     usedNouns.append(noun4)
-  elif not nounBank:
+  else:
     noun4 = random.choice(usedNouns)
   
   if nounBank:
     noun5 = random.choice(nounBank)
     nounBank.remove(noun5)
     usedNouns.append(noun5)
-  elif not nounBank:
+  else:
     noun5 = random.choice(usedNouns)
   
   if nounBank:
     noun6 = random.choice(nounBank)
     nounBank.remove(noun6)
     usedNouns.append(noun6)
-  elif not nounBank:
+  else:
     noun6 = random.choice(usedNouns)
   
   if nounBank:
     noun7 = random.choice(nounBank)
     nounBank.remove(noun7)
     usedNouns.append(noun7)
-  elif not nounBank:
+  else:
     noun7 = random.choice(usedNouns)
   
   if nounBank:
     noun8 = random.choice(nounBank)
     nounBank.remove(noun8)
     usedNouns.append(noun8)
-  elif not nounBank:
+  else:
     noun8 = random.choice(usedNouns)
   
   if nounBank:
     noun9 = random.choice(nounBank)
     nounBank.remove(noun9)
     usedNouns.append(noun9)
-  elif not nounBank:
+  else:
     noun9 = random.choice(usedNouns)
   
   if nounBank:
     noun10 = random.choice(nounBank)
     nounBank.remove(noun10)
     usedNouns.append(noun10)
-  elif not nounBank:
+  else:
     noun10 = random.choice(usedNouns)
   
   
@@ -713,70 +866,70 @@ def genWords():
     verb1 = random.choice(verbBank)
     verbBank.remove(verb1)
     usedVerbs.append(verb1)
-  elif not verbBank:
+  else:
     verb1 = random.choice(usedVerbs)
   
   if verbBank:
     verb2 = random.choice(verbBank)
     verbBank.remove(verb2)
     usedVerbs.append(verb2)
-  elif not verbBank:
+  else:
     verb2 = random.choice(usedVerbs)
     
   if verbBank:
     verb3 = random.choice(verbBank)
     verbBank.remove(verb3)
     usedVerbs.append(verb3)
-  elif not verbBank:
+  else:
     verb3 = random.choice(usedVerbs)
   
   if verbBank:
     verb4 = random.choice(verbBank)
     verbBank.remove(verb4)
     usedVerbs.append(verb4)
-  elif not verbBank:
+  else:
     verb4 = random.choice(usedVerbs)
   
   if verbBank:
     verb5 = random.choice(verbBank)
     verbBank.remove(verb5)
     usedVerbs.append(verb5)
-  elif not verbBank:
+  else:
     verb5 = random.choice(usedVerbs)
   
   if verbBank:
     verb6 = random.choice(verbBank)
     verbBank.remove(verb6)
     usedVerbs.append(verb6)
-  elif not verbBank:
+  else:
     verb6 = random.choice(usedVerbs)
   
   if verbBank:
     verb7 = random.choice(verbBank)
     verbBank.remove(verb7)
     usedVerbs.append(verb7)
-  elif not verbBank:
+  else:
     verb7 = random.choice(usedVerbs)
   
   if verbBank:
     verb8 = random.choice(verbBank)
     verbBank.remove(verb8)
     usedVerbs.append(verb8)
-  elif not verbBank:
+  else:
     verb8 = random.choice(usedVerbs)
   
   if verbBank:
     verb9 = random.choice(verbBank)
     verbBank.remove(verb9)
     usedVerbs.append(verb9)
-  elif not verbBank:
+  else:
     verb9 = random.choice(usedVerbs)
   
   if verbBank:
     verb10 = random.choice(verbBank)
     verbBank.remove(verb10)
     usedVerbs.append(verb10)
-  elif not verbBank:
+  else:
     verb10 = random.choice(usedVerbs)
 
 
@@ -785,70 +938,70 @@ def genWords():
     adj1 = random.choice(adjBank)
     adjBank.remove(adj1)
     usedAdjs.append(adj1)
-  elif not adjBank:
+  else:
     adj1 = random.choice(usedAdjs)
   
   if adjBank:
     adj2 = random.choice(adjBank)
     adjBank.remove(adj2)
     usedAdjs.append(adj2)
-  elif not adjBank:
+  else:
     adj2 = random.choice(usedAdjs)
     
   if adjBank:
     adj3 = random.choice(adjBank)
     adjBank.remove(adj3)
     usedAdjs.append(adj3)
-  elif not adjBank:
+  else:
     adj3 = random.choice(usedAdjs)
   
   if adjBank:
     adj4 = random.choice(adjBank)
     adjBank.remove(adj4)
     usedAdjs.append(adj4)
-  elif not adjBank:
+  else:
     adj4 = random.choice(usedAdjs)
   
   if adjBank:
     adj5 = random.choice(adjBank)
     adjBank.remove(adj5)
     usedAdjs.append(adj5)
-  elif not adjBank:
+  else:
     adj5 = random.choice(usedAdjs)
   
   if adjBank:
     adj6 = random.choice(adjBank)
     adjBank.remove(adj6)
     usedAdjs.append(adj6)
-  elif not adjBank:
+  else:
     adj6 = random.choice(usedAdjs)
   
   if adjBank:
     adj7 = random.choice(adjBank)
     adjBank.remove(adj7)
     usedAdjs.append(adj7)
-  elif not adjBank:
+  else:
     adj7 = random.choice(usedAdjs)
   
   if adjBank:
     adj8 = random.choice(adjBank)
     adjBank.remove(adj8)
     usedAdjs.append(adj8)
-  elif not adjBank:
+  else:
     adj8 = random.choice(usedAdjs)
   
   if adjBank:
     adj9 = random.choice(adjBank)
     adjBank.remove(adj9)
     usedAdjs.append(adj9)
-  elif not adjBank:
+  else:
     adj9 = random.choice(usedAdjs)
   
   if adjBank:
     adj10 = random.choice(adjBank)
     adjBank.remove(adj10)
     usedAdjs.append(adj10)
-  elif not adjBank:
+  else:
     adj10 = random.choice(usedAdjs)
 
 
@@ -857,129 +1010,339 @@ def genWords():
     adv1 = random.choice(advBank)
     advBank.remove(adv1)
     usedAdvs.append(adv1)
-  elif not advBank:
+  else:
     adv1 = random.choice(usedAdvs)
   
   if advBank:
     adv2 = random.choice(advBank)
     advBank.remove(adv2)
     usedAdvs.append(adv2)
-  elif not advBank:
+  else:
     adv2 = random.choice(usedAdvs)
     
   if advBank:
     adv3 = random.choice(advBank)
     advBank.remove(adv3)
     usedAdvs.append(adv3)
-  elif not advBank:
+  else:
     adv3 = random.choice(usedAdvs)
   
   if advBank:
     adv4 = random.choice(advBank)
     advBank.remove(adv4)
     usedAdvs.append(adv4)
-  elif not advBank:
+  else:
     adv4 = random.choice(usedAdvs)
   
   if advBank:
     adv5 = random.choice(advBank)
     advBank.remove(adv5)
     usedAdvs.append(adv5)
-  elif not advBank:
+  else:
     adv5 = random.choice(usedAdvs)
   
   if advBank:
     adv6 = random.choice(advBank)
     advBank.remove(adv6)
     usedAdvs.append(adv6)
-  elif not advBank:
+  else:
     adv6 = random.choice(usedAdvs)
   
   if advBank:
     adv7 = random.choice(advBank)
     advBank.remove(adv7)
     usedAdvs.append(adv7)
-  elif not advBank:
+  else:
     adv7 = random.choice(usedAdvs)
   
   if advBank:
     adv8 = random.choice(advBank)
     advBank.remove(adv8)
     usedAdvs.append(adv8)
-  elif not advBank:
+  else:
     adv8 = random.choice(usedAdvs)
   
   if advBank:
     adv9 = random.choice(advBank)
     advBank.remove(adv9)
     usedAdvs.append(adv9)
-  elif not advBank:
+  else:
     adv9 = random.choice(usedAdvs)
   
   if advBank:
     adv10 = random.choice(advBank)
     advBank.remove(adv10)
     usedAdvs.append(adv10)
-  elif not advBank:
+  else:
     adv10 = random.choice(usedAdvs)
   
   
   #convert all words to lowercase
-  charType = '[' + charType.lower() + ']'
+  charType = charType.lower()
   
   
-  noun1 = '[' + noun1.lower() + ']'
-  noun2 = '[' + noun2.lower() + ']'
-  noun3 = '[' + noun3.lower() + ']'
-  noun4 = '[' + noun4.lower() + ']'
-  noun5 = '[' + noun5.lower() + ']'
-  noun6 = '[' + noun6.lower() + ']'
-  noun7 = '[' + noun7.lower() + ']'
-  noun8 = '[' + noun8.lower() + ']'
-  noun9 = '[' + noun9.lower() + ']'
-  noun10 = '[' + noun10.lower() + ']'
+  noun1 = noun1.lower()
+  noun2 = noun2.lower()
+  noun3 = noun3.lower()
+  noun4 = noun4.lower()
+  noun5 = noun5.lower()
+  noun6 = noun6.lower()
+  noun7 = noun7.lower()
+  noun8 = noun8.lower()
+  noun9 = noun9.lower()
+  noun10 = noun10.lower()
   
-  verb1 = '[' + verb1.lower() + ']'
-  verb2 = '[' + verb2.lower() + ']'
-  verb3 = '[' + verb3.lower() + ']'
-  verb4 = '[' + verb4.lower() + ']'
-  verb5 = '[' + verb5.lower() + ']'
-  verb6 = '[' + verb6.lower() + ']'
-  verb7 = '[' + verb7.lower() + ']'
-  verb8 = '[' + verb8.lower() + ']'
-  verb9 = '[' + verb9.lower() + ']'
-  verb10 = '[' + verb10.lower() + ']'
+  verb1 = verb1.lower()
+  verb2 = verb2.lower()
+  verb3 = verb3.lower()
+  verb4 = verb4.lower()
+  verb5 = verb5.lower()
+  verb6 = verb6.lower()
+  verb7 = verb7.lower()
+  verb8 = verb8.lower()
+  verb9 = verb9.lower()
+  verb10 = verb10.lower()
   
-  adj1 = '[' + adj1.lower() + ']'
-  adj2 = '[' + adj2.lower() + ']'
-  adj3 = '[' + adj3.lower() + ']'
-  adj4 = '[' + adj4.lower() + ']'
-  adj5 = '[' + adj5.lower() + ']'
-  adj6 = '[' + adj6.lower() + ']'
-  adj7 = '[' + adj7.lower() + ']'
-  adj8 = '[' + adj8.lower() + ']'
-  adj9 = '[' + adj9.lower() + ']'
-  adj10 = '[' + adj10.lower() + ']'
+  adj1 = adj1.lower()
+  adj2 = adj2.lower()
+  adj3 = adj3.lower()
+  adj4 = adj4.lower()
+  adj5 = adj5.lower()
+  adj6 = adj6.lower()
+  adj7 = adj7.lower()
+  adj8 = adj8.lower()
+  adj9 = adj9.lower()
+  adj10 = adj10.lower()
   
-  adv1 = '[' + adv1.lower() + ']'
-  adv2 = '[' + adv2.lower() + ']'
-  adv3 = '[' + adv3.lower() + ']'
-  adv4 = '[' + adv4.lower() + ']'
-  adv5 = '[' + adv5.lower() + ']'
-  adv6 = '[' + adv6.lower() + ']'
-  adv7 = '[' + adv7.lower() + ']'
-  adv8 = '[' + adv8.lower() + ']'
-  adv9 = '[' + adv9.lower() + ']'
-  adv10 = '[' + adv10.lower() + ']'
+  adv1 = adv1.lower()
+  adv2 = adv2.lower()
+  adv3 = adv3.lower()
+  adv4 = adv4.lower()
+  adv5 = adv5.lower()
+  adv6 = adv6.lower()
+  adv7 = adv7.lower()
+  adv8 = adv8.lower()
+  adv9 = adv9.lower()
+  adv10 = adv10.lower()
 
+#story "The Forest:
+def story1():
+    global textSpeed
+    global charType
+    window = sg.Window("The Forest",[[sg.Output(size=(80,20),key='-story-')],
+                                                    [sg.Button('Run', bind_return_key=True)]])
+    
+    begin = 1
+    while True:
+        event, value = window.Read()
+        if event == 'EXIT'  or event == sg.WIN_CLOSED:
+            window.close()
+            break # exit button clicked      
+        if event == 'Run' and begin == 1:
+            begin = 0
+            title = "The Forest"
+            
+            #story
+            print_slowly("A long time ago, there was a " + adj1 + " " + charType + " who lived in a far away land. What was " +pronounHis+ " name?")
+            time.sleep(1)
+            print("")
+            
+            charName = sg.popup_get_text('What was the ' + charType + '\'s name?','Please input a name.').capitalize()
+            time.sleep(1)
+            
+            char = charName + " the " + charType
+            
+            print_slowly("Ah! Our " + adj1 + " " + charType + " was named " + charName + "! What a " + adj2 + " name! It should be; it was passed down to " + pronounHim + " from " + pronounHis + " " + adj3 + " Aunt Margerie. Never mind the fact that she's a " + noun1 + " and " + pronounHe +"'s a " + charType + ", it's a family name.")
+            print("")
+            print("")
+            time.sleep(1)
+            print_slowly("It was a dark and " + adj4 + " night. Our " + charName + " the " + charType + " is " + verb1  + "ing through a thicket of " + adj5 + " bushes. As "+pronounHe+" " + verb2 + "s back to the outside world, "+ pronounHe + " hears a loud crash, as if an overweight " + noun2 + " had just come crashing through " + pronounHis + " " + noun3 + ".")
+            print("")
+            print("")
+            time.sleep(1)
+            
+            choice = None
+            while choice != 'yes' and choice != 'no' and choice != 'Yes' and choice != 'No' and choice != 'y' and choice != 'n' and choice != 'Y' and choice != 'N':
+                choice = sg.popup_get_text('Does ' + charName + ' want to examine the noise?','Please input yes or no.')
+            
+            if choice == 'yes' or choice == 'Yes' or choice == 'y' or choice == 'Y':
+                print_slowly(charName + " " + verb3 + "s forward " + adv1 + ". " + pronounHe.capitalize() + " looks around, trying to identify the source of the noise that sounded as if an overweight " + noun2 + " had just come crashing through " + pronounHis + " " + noun3 + ".")
+                print("")
+                time.sleep(1)
+                split = random.randint(1,3)
+                
+                if split == 1:
+                  print_slowly(charName + " couldn't find anything. Confused as a " + adj6 + " " + noun4 + ", " + pronounHe + " decides to turn back the way he came.")
+                  print("")
+                  time.sleep(1)
+                  randsize1 = str(random.randint(20,2000))
+                  randsize2 = str(random.randint(20,2000))
+                  randsize3 = str(random.randint(20,2000))
+                  print_slowly("After several minutes of traveling, " + charName + " comes across a ditch. Well, more of a ravine. About " + randsize1 +" feet across and at least a " + randsize2 + " feet down, this scar on the land stretched for " + randsize3 + " feet in either direction.")
+                  print("")
+                  time.sleep(1)
+                  
+                  choice = None
+                  while choice != 'yes' and choice != 'no' and choice != 'Yes' and choice != 'No' and choice != 'y' and choice != 'n' and choice != 'Y' and choice != 'N':
+                      choice = sg.popup_get_text('Should ' + charName + ' attempt to cross the ravine?','Please input yes or no.')
+                  
+                  if choice == 'yes' or choice == 'Yes' or choice == 'y' or choice == 'Y':
+                      print_slowly(charName + " tries to cross the ravine by jumping over it. Alas, one should be more careful, especially after such a close call with whatever produced that " + noun2 + "like noise. Like an overly " + adj7 + " " + noun4 + ", " + charName + " plummeted down the ravine to " + pronounHis + " death.")
+                      print("")
+                      time.sleep(1)
+                      print_slowly("If I said that " + charName + " was remebered for " + pronounHis + " " + adj8 + ", I'd be lying. " + charName + " would only be remembered for how " + pronounHe +" went splat like a " + adj8 + " " + noun5 + ". So for all of the " + noun6 + "s out there, remember; watch your step.")
+                      print("")
+                      time.sleep(3)
+                      ending = "Splat goes the weasel"
+                      storyEnd(title,char,ending)
+                      
+                  elif choice == 'no' or choice == 'No' or choice == 'n' or choice == 'N':
+                      print_slowly(charName + " decides to walk along the ravine for a time, until " + pronounHe +" finds something better to do.")
+                      print("")
+                      time.sleep(1)
+                      print_slowly(charName + " is still walking.")
+                      print("")
+                      time.sleep(2)
+                      print_slowly(charName + " is still walking.")
+                      print("")
+                      time.sleep(4)
+                      print_slowly(charName + " is STILL walking.")
+                      print("")
+                      time.sleep(1)
+                      print_slowly("It seems as if " + charName + "'s estimate that the ravine stretched on for " + randsize3 + " feet was much too short. It still stretched on beyond " + pronounHis + " sight.")
+                      print("")
+                      time.sleep(2)
+                      print_slowly("Still, " + charName + " walked along it's edge. Compelled to do this by the command of some force " + charName + " was unaware of, "+ pronounHe +" would walk the edge of this ravine until the day "+ pronounHe + " died, alone and forgotten like a " + adj7 + " " + noun3 + " who didn't know the difference between a " + noun4 + " and a " + noun5 + ".")
+                      print("")
+                      time.sleep(3)
+                      ending = "As God as my witness"
+                      storyEnd(title,char,ending)
+                
+                elif split == 2 or split == 3:
+                  print_slowly("Suddenly, a massive, " + adj6 + " " + noun4 + " jumped on top of " + charName + "! In a moment of panic, our hero flails "+ pronounHis +" arms " + adv2 + " around and grabs a nearby " + noun5 + ". Still suffocated by the thrashing " + noun4 + ", " + charName + " whacks the " + noun4 + ", which proceeds to drop dead on top of "+ pronounHim +".")
+                  print("")
+                  time.sleep(1)
+                  print_slowly("Now, this appears like a good thing; the massive, " + adj6 + " " + noun4 + " was no longer " + verb3 + "ing our poor hero. However, this is NOT a good thing. While the massive, "  + adj6 + " " + noun4 + " was no longer " + verb3 + "ing our charming " + charType + ", there was now a DEAD massive, " + adj6 + " " + noun4 + " on top of our charming " + charType + ".")
+                  print("")
+                  time.sleep(1)
+                  print_slowly("On any other day, I'm sure that " + charName + " would be quick to tell you how easily "+ pronounHe +" would've been able to heave a massive, " + adj6 + " " + noun4 + " off of "+ pronounHis +" chest, but on this particular day "+ pronounHe +" simply wasn't feeling it. Probably something " +  adj8 + " in the air. So it took several minutes for our champion to roll aside the glistening " + noun4 + " that lay on top of "+ pronounHim +" and stand up.")
+                  print("")
+                  time.sleep(1)
+                  print_slowly("Our hero brushed "+ pronounHim +"self off in the most heroic manner possible for a " + charType + " who was just abused by a " + noun4 + ", and dove, just as heroicly, back into the bush to hide.")
+                  print("")
+                  time.sleep(1)
+                  daysPassed = str(random.randint(10,100))
+                  print_slowly("It was " + daysPassed + " days later that our hero arose. Bleary eyed and ready to " + verb4 +  " " + adv3 + ", " + charName + " had never felt better. A little hungry, maybe, but never better.")
+                  print("")
+                  time.sleep(1)
+                  print_slowly("VERY hungry, it seems. In fact, " + charName + " could barely stand. A mix of fatigue, hunger, and missing "+ pronounHis +" Aunt Margerie caused " + charName + " to collapse to the ground, forced to crawl by "+ pronounHis +" hands like an untrained " + noun6 + ".")
+                  print("")
+                  time.sleep(1)
+                  strengthOf = str(random.randint(0,1000))
+                  print_slowly("Through sheer willpower, with the strength of " + strengthOf + " " + noun7 + "s, " + charName + " crawled " + adv4 + " through the bushes, hoping, " + verb5 + "ing to find a way out. It was several minutes later that "+ pronounHe +" emerged, whining like an abandoned " + noun8 + ", and saw "+ pronounHis +" salvation: a river, filled with a variety of red fishes. "+ pronounHe.capitalize() +" also noticed some enticing berries bushes several yards away.")
+                  print("")
+                  
+                  choice = None
+                  while choice != '1' and choice != '2':
+                      choice = sg.popup_get_text('Should ' + charName + ' (1) eat the berries or (2) drink the water?','Please input 1 or 2.')
+                  
+                  if choice == '1':
+                      print_slowly(charName + " moves towards the berries, the dirt sticking under "+ pronounHis +" fingernails like wet " + noun9 + ". With each " + adj9 + " movment, "+ pronounHe +" felt his strength returning, hope filling "+ pronounHim +" with the " + adj10 + " feeling "+ pronounHe +" got whenever "+ pronounHe +" was around Aunt Margerie. Before "+ pronounHe +" knew it, "+ pronounHe +" was upon them. Almost " + verb6 + "ing, " + charName + " reaches for the berries and greedily stuffs them in "+ pronounHis +" mouth. Never before had "+ pronounHe +" fed himself so " + adv5 + ".")
+                      print("")
+                      time.sleep(1)
+                      print_slowly("It was at the climax of this enjoyment that " + charName + " saw something out of the corner of "+ pronounHis +" eye. Something large, and " + noun4 + "like. Through "+ pronounHis +" gluttony and fear," + charName + " had failed to acknowledge the possibility that there could've been more than one " + noun4 + " in this forest. It was as "+ pronounHe +" was stuffing "+ pronounHis +" mouth full with another handfull of berries that the massive, " + adj6 + " " + noun4 + " made it's move. A simple hop and it was in motion.")
+                      print("")
+                      time.sleep(1)
+                      print_slowly("But before the " + noun4 + " could devour it's target, " + charName + " seized up. "+ pronounHis.capitalize() +" eyes bulged, seeming almost to pop out of his face. With a last exhalation and final thoughts of "+ pronounHis +" Auntie, " + charName + " died.")
+                      print("")
+                      time.sleep(1)
+                      print_slowly("The massive, " + adj6 + " " + noun4 + " was left with several minutes to enjoy it's free meal before other massive, " + adj6 + " " + noun4 + "s came along to take some for themselves. Alas, this is the fate of adventurers who step foot in the Forest of the " + noun4.capitalize() + ". And of course, never eat the berries.")
+                      print("")
+                      time.sleep(3)
+                      ending = "Death by berries"
+                      storyEnd(title,char,ending)
+                  elif choice == '2':
+                      print_slowly(charName + " stumbles towards the stream. Thirsty from "+ pronounHis +" " + adj9 + " adventure, " + charName + " " + adv5 + " gulps down the contents of the stream. Minutes pass, and soon, our hero's thirst is satiated. Satisfied, " + charName + " crawls out of the stream and lies down, sopping wet, on the grass.")
+                      print("")
+                      time.sleep(1)
+                      print_slowly("There is silence. Nothing moves around " + charName + ".")
+                      print("")
+                      time.sleep(2.5)
+                      print_slowly("Hmmm. Odd. " + charName + " feels slightly queasy. Probably just gas. It'll pass.")
+                      print("")
+                      time.sleep(2.5)
+                      print_slowly("AUUGH. It has not passed. " + charName + " holds "+ pronounHis +" stomach, wheezing and begging " + adv6 + " like a " + adj10 + " " + noun9 + ".")
+                      print("")
+                      time.sleep(1)
+                      print_slowly(charName + " opened "+ pronounHis +" mouth only to expel the water "+ pronounHe +" had just consumed. Gallons spewed out of "+ pronounHim +", like an uneasy " + noun10 + ". The one difference is that the water did not stop. Out of " + charName + "'s mouth it kept coming. Sometimes the vomitting was interrupted with brief respits, but not enough for " + charName + " to breathe.")
+                      print("")
+                      time.sleep(1)
+                      print_slowly("Even after it seemed like too much fluid had been regurgitated, it still kept coming. And coming. And coming. And still it was coming.")
+                      print("")
+                      time.sleep(1)
+                      print_slowly("It was several minutes later that the water finally ceased it's hazardous flow. The water had stopped. " + charName + ", it seems, had too.")
+                      print("")
+                      time.sleep(1)
+                      print_slowly("A warning as old as literature itself, it seems; beware the red herrings.")
+                      time.sleep(3)
+                      ending = "Fish-filled fallacy"
+                      storyEnd(title,char,ending)
+            
+            elif choice == 'no' or choice == 'No' or choice == 'n' or choice == 'N':
+                print_slowly(charName + " decides to head back the way "+ pronounHe +" came.")
+                print("")
+                time.sleep(1)
+                randsize1 = str(random.randint(20,2000))
+                randsize2 = str(random.randint(20,2000))
+                randsize3 = str(random.randint(20,2000))
+                print_slowly("After several minutes of traveling, " + charName + " comes across a ditch. Well, more of a ravine. About " + randsize1 +" feet across and at least a " + randsize2 + " feet down, this scar on the land stretched for " + randsize3 + " feet in either direction.")
+                print("")
+                time.sleep(1)
+                  
+                choice = None
+                while choice != 'yes' and choice != 'no' and choice != 'Yes' and choice != 'No' and choice != 'y' and choice != 'n' and choice != 'Y' and choice != 'N':
+                    choice = sg.popup_get_text('Should ' + charName + ' attempt to cross the ravine?','Please input yes or no.')
+                  
+                if choice == 'yes' or choice == 'Yes' or choice == 'y' or choice == 'Y':
+                    print_slowly(charName + " tries to cross the ravine by jumping over it. Alas, one should be more careful, especially after such a close call with whatever produced that " + noun2 + "like noise. Like an overly " + adj7 + " " + noun4 + ", " + charName + " plummeted down the ravine to " + pronounHis + " death.")
+                    print("")
+                    time.sleep(1)
+                    print_slowly("If I said that " + charName + " was remebered for " + pronounHis + " " + adj8 + ", I'd be lying. " + charName + " would only be remembered for how " + pronounHe +" went splat like a " + adj8 + " " + noun5 + ". So for all of the " + noun6 + "s out there, remember; watch your step.")
+                    print("")
+                    time.sleep(3)
+                    ending = "Splat goes the weasel"
+                    storyEnd(title,char,ending)
+                    
+                elif choice == 'no' or choice == 'No' or choice == 'n' or choice == 'N':
+                    print_slowly(charName + " decides to walk along the ravine for a time, until " + pronounHe +" finds something better to do.")
+                    print("")
+                    time.sleep(1)
+                    print_slowly(charName + " is still walking.")
+                    print("")
+                    time.sleep(2)
+                    print_slowly(charName + " is still walking.")
+                    print("")
+                    time.sleep(4)
+                    print_slowly(charName + " is STILL walking.")
+                    print("")
+                    time.sleep(1)
+                    print_slowly("It seems as if " + charName + "'s estimate that the ravine stretched on for " + randsize3 + " feet was much too short. It still stretched on beyond " + pronounHis + " sight.")
+                    print("")
+                    time.sleep(2)
+                    print_slowly("Still, " + charName + " walked along it's edge. Compelled to do this by the command of some force " + charName + " was unaware of, "+ pronounHe +" would walk the edge of this ravine until the day "+ pronounHe + " died, alone and forgotten like a " + adj7 + " " + noun3 + " who didn't know the difference between a " + noun4 + " and a " + noun5 + ".")
+                    print("")
+                    time.sleep(3)
+                    ending = "As God as my witness"
+                    storyEnd(title,char,ending)
+                  
 #story "The Bible as God Intended"
 def story2():
     global textSpeed
     global charType
         
     window = sg.Window("The Bible as God Intended",[[sg.Output(size=(80,20),key='-story-')],
-                                                    [sg.Button('Run', bind_return_key=True)]]).Finalize()
-    window.Maximize()
+                                                    [sg.Button('Run', bind_return_key=True)]])
+    
     
     begin = 1
     while True:
@@ -998,7 +1361,7 @@ def story2():
             saveSpeed = textSpeed
             
             #skips color indicator to capitalize charType for title
-            charType = charType[:1] + charType[1].swapcase() + charType[2:]
+            charType = charType.capitalize()
              
             #slows text speed for printing the title
             textSpeed = 2 * textSpeed
@@ -1019,18 +1382,51 @@ def story2():
             print_slowly("4. And God saw the "+noun5+", that it was "+adj1+": and God "+verb3+"ed the "+noun5+" from the "+noun6+".")
             print("")
             time.sleep(1)
-        
-    
-    
+            
+            light = sg.popup_get_text('What should God call the '+noun5+"?",'Please input a name.').capitalize()
+            time.sleep(1)
+            
+            darkness = sg.popup_get_text('What should God call the '+noun6+"?",'Please input a name.').capitalize()
+            time.sleep(1)
+            
+            print_slowly("5. And God called the "+noun5+" " + light + ", and the "+noun6+" "+pronounHe+" called " + darkness + ". And the evening and the morning were the first "+noun7+".")
+            print("")
+            time.sleep(1)
+            print_slowly("6. And God said, Let there be a "+noun9+" in the midst of the "+noun3+"s, and let it "+verb4+" the "+noun3+"s from the "+noun3+"s.")
+            print("")
+            time.sleep(1)
+            print_slowly("7. And God made the "+noun8+", and "+verb4+" the "+noun3+"s which were under the "+noun8+" of the "+noun3+"s which were above the "+noun8+": and it was so.")
+            print("")
+            time.sleep(1)
+            
+            heaven = sg.popup_get_text('What should God call the '+noun8+"?",'Please input a name.').capitalize()
+            time.sleep(1)
+            
+            randomInterval = random.randint(1,30)
+            intervals = ['first','second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth','eleventh','twelfth','thirteenth','fourteenth','fifteenth','sixteenth','seventeenth','eighteenth','nineteenth','twentieth','twenty-first','twenty-second','twenty-third','twenty-fourth','twenty-fifth','twenty-sixth','twenty-seventh','twenty-eighth','twenty-ninth','thirtieth']
+            intervalWord = intervals[randomInterval - 1]
+            print_slowly("8. And God called the "+noun8+" "+heaven+". And the evening and the morning were the "+intervalWord+" day.")
+            print("")
+            time.sleep(1)
+            print_slowly("9. And God created existence. It kinda sucked. Not to worry. Soon, everything was gone. And so it was. Amen.")
+            print("")
+            time.sleep(10)
+            
+            window.close()
+            
+            char = "God"
+            ending = "Existence"
+            storyEnd(title,char,ending)
 
 #chooses random story
 def genStory():
   genWords()
   genGender()
   
+  
+  numStor = 5 #number of stories
+  randStor = random.randint(1,numStor) #selects one from the options
   if curStory == "none":
-    numStor = 5 #number of stories
-    randStor = random.randint(1,numStor) #selects one from the options
     if randStor == 1:
       story1()
     elif randStor == 2:
@@ -1068,7 +1464,7 @@ def genStory():
 def storySelect():
   global curStory
   window = sg.Window('Select your story',[[sg.Text("Select a story to experience.")],[sg.Button('The Forest')],[sg.Button('The Bible as God Intended')],[sg.Button('Story 3')],[sg.Button('Story 4')],[sg.Button('Story 5')],[sg.Button('Random')]]).Finalize()
-  window.Maximize()
+  
   
   while True:
       event, values = window.read()
@@ -1076,7 +1472,7 @@ def storySelect():
           window.close()
           curStory = 1
           window = sg.Window('Selection: The Forest',[[sg.Text("Your selected story is \"The Forest\".")],[sg.Button('Main menu')]]).Finalize()
-          window.Maximize()
+          
           while True:
               event, values = window.read()
               if event == "Main menu":
@@ -1089,7 +1485,7 @@ def storySelect():
           window.close()
           curStory = 2
           window = sg.Window('Selection: The Bible as God Intended',[[sg.Text("Your selected story is \"The Bible as God Intended\".")],[sg.Button('Main menu')]]).Finalize()
-          window.Maximize()
+          
           while True:
               event, values = window.read()
               if event == "Main menu":
@@ -1102,7 +1498,7 @@ def storySelect():
           window.close()
           curStory = 3
           window = sg.Window('Selection: Story 3',[[sg.Text("Your selected story is \"Story 3\".")],[sg.Button('Main menu')]]).Finalize()
-          window.Maximize()
+          
           while True:
               event, values = window.read()
               if event == "Main menu":
@@ -1115,7 +1511,7 @@ def storySelect():
           window.close()
           curStory = 4
           window = sg.Window('Selection: Story 4',[[sg.Text("Your selected story is \"Story 4\".")],[sg.Button('Main menu')]]).Finalize()
-          window.Maximize()
+          
           while True:
               event, values = window.read()
               if event == "Main menu":
@@ -1128,7 +1524,7 @@ def storySelect():
           window.close()
           curStory = 5
           window = sg.Window('Selection: Story 5',[[sg.Text("Your selected story is \"Story 5\".")],[sg.Button('Main menu')]]).Finalize()
-          window.Maximize()
+          
           while True:
               event, values = window.read()
               if event == "Main menu":
@@ -1141,7 +1537,7 @@ def storySelect():
           window.close()
           curStory = None
           window = sg.Window('Selection: Random',[[sg.Text("Your story selection will be random.")],[sg.Button('Main menu')]]).Finalize()
-          window.Maximize()
+          
           while True:
               event, values = window.read()
               if event == "Main menu":
@@ -1163,7 +1559,7 @@ def mainMenu():
                 [sg.Button('Quit')]]
 
     window = sg.Window('Play on Words', layout).Finalize()
-    window.Maximize()
+    
     while True:
         event, values = window.read()
         if event == sg.WIN_CLOSED or event == 'Quit':
